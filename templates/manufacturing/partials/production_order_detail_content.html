@@ -1,0 +1,152 @@
+{% load djicons i18n %}
+
+<div x-data="{
+    addOpen: false,
+    deleteConfirm: false,
+    deleteTarget: null,
+    openAddPanel() {
+        htmx.ajax('GET', '{% url 'manufacturing:batch_add_panel' order.id %}', { target: '#batch-panel-content', swap: 'innerHTML' });
+        this.addOpen = true;
+    },
+    closePanel() { this.addOpen = false; },
+    confirmDelete() {
+        if (this.deleteTarget) {
+            htmx.ajax('POST', this.deleteTarget.url, {
+                target: '#batches-container', swap: 'innerHTML',
+                headers: { 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || '{{ csrf_token }}' }
+            });
+        }
+        this.deleteConfirm = false;
+        this.deleteTarget = null;
+    }
+}">
+
+    <!-- Back button -->
+    <div class="mb-4">
+        <button class="btn btn-ghost btn-sm"
+                hx-get="{% url 'manufacturing:production_orders_list' %}"
+                hx-target="#main-content-area"
+                hx-push-url="true">
+            {% icon "arrow-back-outline" %}
+            {% trans "Back to Production Orders" %}
+        </button>
+    </div>
+
+    {% csrf_token %}
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Left column: Order info -->
+        <div class="lg:col-span-1">
+            <div class="card glass">
+                <div class="card-header">
+                    <h3 class="card-title">{% trans "Order Details" %}</h3>
+                </div>
+                <div class="card-body">
+                    <div class="list list-inset">
+                        <div class="list-item">
+                            <div class="list-item-content">
+                                <span class="list-item-label">{% trans "Order Number" %}</span>
+                                <span class="list-item-value">{{ order.order_number }}</span>
+                            </div>
+                        </div>
+                        <div class="list-item">
+                            <div class="list-item-content">
+                                <span class="list-item-label">{% trans "BOM" %}</span>
+                                <span class="list-item-value">{{ order.bom|default:"-" }}</span>
+                            </div>
+                        </div>
+                        <div class="list-item">
+                            <div class="list-item-content">
+                                <span class="list-item-label">{% trans "Quantity" %}</span>
+                                <span class="list-item-value">{{ order.quantity }}</span>
+                            </div>
+                        </div>
+                        <div class="list-item">
+                            <div class="list-item-content">
+                                <span class="list-item-label">{% trans "Batch/Lot Number" %}</span>
+                                <span class="list-item-value">{{ order.batch_number|default:"-" }}</span>
+                            </div>
+                        </div>
+                        <div class="list-item">
+                            <div class="list-item-content">
+                                <span class="list-item-label">{% trans "Expiry Date" %}</span>
+                                <span class="list-item-value">{{ order.expiry_date|default:"-" }}</span>
+                            </div>
+                        </div>
+                        <div class="list-item">
+                            <div class="list-item-content">
+                                <span class="list-item-label">{% trans "Status" %}</span>
+                                <span class="list-item-end">
+                                    <span class="badge badge-sm {% if order.status == 'done' %}color-success{% elif order.status == 'in_progress' %}color-primary{% elif order.status == 'confirmed' %}color-warning{% elif order.status == 'cancelled' %}color-error{% endif %}">{{ order.get_status_display }}</span>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="list-item">
+                            <div class="list-item-content">
+                                <span class="list-item-label">{% trans "Start Date" %}</span>
+                                <span class="list-item-value">{{ order.start_date|default:"-" }}</span>
+                            </div>
+                        </div>
+                        <div class="list-item">
+                            <div class="list-item-content">
+                                <span class="list-item-label">{% trans "End Date" %}</span>
+                                <span class="list-item-value">{{ order.end_date|default:"-" }}</span>
+                            </div>
+                        </div>
+                        {% if order.notes %}
+                        <div class="list-item list-item-multiline">
+                            <div class="list-item-content">
+                                <span class="list-item-label">{% trans "Notes" %}</span>
+                                <span class="list-item-note">{{ order.notes }}</span>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right column: Production Batches -->
+        <div class="lg:col-span-2">
+            <div class="card glass">
+                <div class="card-header">
+                    <h3 class="card-title">{% trans "Production Batches" %}</h3>
+                    <button class="btn btn-sm color-primary"
+                            @click="openAddPanel()">
+                        {% icon "add-outline" %}
+                        {% trans "Add Batch" %}
+                    </button>
+                </div>
+                <div class="card-body p-0">
+                    <div id="batches-container">
+                        {% include "manufacturing/partials/batches_list.html" %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Side Sheet for adding batch -->
+    <div class="sheet-backdrop" :class="{ 'is-open': addOpen }" @click.self="closePanel()">
+        <div class="side-sheet side-sheet-right" id="batch-panel-content"></div>
+    </div>
+
+    <!-- Delete confirmation modal -->
+    <div class="modal-backdrop" :data-state="deleteConfirm ? 'open' : 'closed'" @click.self="deleteConfirm = false; deleteTarget = null">
+        <div class="modal modal-sm">
+            <div class="modal-header">
+                <h3 class="modal-title">{% trans "Confirm Delete" %}</h3>
+                <button class="modal-close" @click="deleteConfirm = false; deleteTarget = null">{% icon "close-outline" %}</button>
+            </div>
+            <div class="modal-body">
+                <p class="text-sm text-base-content/70">
+                    {% trans "Are you sure you want to delete batch" %} <strong x-text="deleteTarget?.name"></strong>?
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-ghost btn-sm" @click="deleteConfirm = false; deleteTarget = null">{% trans "Cancel" %}</button>
+                <button class="btn btn-sm color-error" @click="confirmDelete()">{% icon "trash-outline" %} {% trans "Delete" %}</button>
+            </div>
+        </div>
+    </div>
+</div>

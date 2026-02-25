@@ -1,0 +1,61 @@
+{% load djicons i18n %}
+
+<div class="side-sheet-header">
+    <h3 class="sheet-title">{% trans "Add Production Batch" %}</h3>
+    <button class="sheet-close" @click="closePanel()">{% icon "close-outline" %}</button>
+</div>
+
+<div class="side-sheet-content">
+    <form id="add-batch-form"
+          hx-post="{% url 'manufacturing:batch_add' order.id %}"
+          hx-target="#batches-container"
+          hx-swap="innerHTML"
+          @htmx:after-request="closePanel()"
+          class="flex flex-col gap-4 p-6">
+        {% csrf_token %}
+
+        <div class="form-group">
+            <label class="form-group-label">{% trans "Batch Number" %}</label>
+            <input type="text" name="batch_number" class="input input-sm w-full" placeholder="{% trans 'e.g. BATCH-001' %}" required>
+        </div>
+
+        <div class="form-group">
+            <label class="form-group-label">{% trans "Quantity Produced" %}</label>
+            <input type="number" name="quantity_produced" class="input input-sm w-full" step="0.01" placeholder="0">
+        </div>
+
+        <div class="form-group">
+            <label class="form-group-label">{% trans "Production Date" %}</label>
+            <input type="date" name="production_date" class="input input-sm w-full">
+        </div>
+
+        <div class="form-group">
+            <label class="form-group-label">{% trans "Expiry Date" %}</label>
+            <input type="date" name="expiry_date" class="input input-sm w-full">
+        </div>
+
+        <div class="form-group">
+            <label class="form-group-label">{% trans "Quality Status" %}</label>
+            <select name="quality_status" class="select select-sm w-full">
+                <option value="pending">{% trans "Pending QC" %}</option>
+                <option value="approved">{% trans "Approved" %}</option>
+                <option value="rejected">{% trans "Rejected" %}</option>
+                <option value="quarantine">{% trans "Quarantine" %}</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label class="form-group-label">{% trans "Notes" %}</label>
+            <textarea name="notes" class="textarea textarea-sm w-full" rows="3"></textarea>
+        </div>
+    </form>
+</div>
+
+<div class="side-sheet-footer">
+    <div class="flex justify-end gap-2">
+        <button type="button" class="btn btn-ghost btn-sm" @click="closePanel()">{% trans "Cancel" %}</button>
+        <button type="submit" form="add-batch-form" class="btn btn-sm color-primary">
+            {% icon "add-outline" %} {% trans "Add Batch" %}
+        </button>
+    </div>
+</div>

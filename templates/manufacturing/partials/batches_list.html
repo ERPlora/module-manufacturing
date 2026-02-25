@@ -1,0 +1,31 @@
+{% load djicons i18n %}
+
+{% if batches %}
+<div class="list">
+    {% for batch in batches %}
+    <div class="list-item">
+        <div class="list-item-content">
+            <span class="list-item-label">{{ batch.batch_number }}</span>
+            <span class="list-item-note">
+                {% trans "Qty" %}: {{ batch.quantity_produced }}
+                {% if batch.production_date %} | {{ batch.production_date }}{% endif %}
+                {% if batch.expiry_date %} | {% trans "Exp" %}: {{ batch.expiry_date }}{% endif %}
+            </span>
+        </div>
+        <div class="list-item-end flex items-center gap-2">
+            <span class="badge badge-sm {% if batch.quality_status == 'approved' %}color-success{% elif batch.quality_status == 'rejected' %}color-error{% elif batch.quality_status == 'pending' %}color-warning{% elif batch.quality_status == 'quarantine' %}color-primary{% endif %}">{{ batch.get_quality_status_display }}</span>
+            <button class="btn btn-ghost btn-sm btn-circle color-error"
+                    @click="deleteTarget = { name: '{{ batch.batch_number }}', url: '{% url 'manufacturing:batch_delete' order.id batch.id %}' }; deleteConfirm = true"
+                    title="{% trans 'Delete' %}">
+                {% icon "trash-outline" %}
+            </button>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="p-8 text-center text-base-content/50">
+    <div class="text-3xl mb-2">{% icon "layers-outline" %}</div>
+    <p class="text-sm">{% trans "No batches yet. Add the first batch for this production order." %}</p>
+</div>
+{% endif %}

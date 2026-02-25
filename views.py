@@ -13,7 +13,7 @@ from apps.core.htmx import htmx_view
 from apps.core.services import export_to_csv, export_to_excel
 from apps.modules_runtime.navigation import with_module_nav
 
-from .models import BillOfMaterials, BOMLine, ProductionOrder
+from .models import BillOfMaterials, BOMLine, ProductionOrder, ProductionBatch, BatchIngredient
 
 PER_PAGE_CHOICES = [10, 25, 50, 100]
 
@@ -444,6 +444,67 @@ def production_orders_bulk_action(request):
     if action == 'delete':
         qs.update(is_deleted=True, deleted_at=timezone.now())
     return _render_production_orders_list(request, hub_id)
+
+
+# ======================================================================
+# Production Order Detail + Batches
+# ======================================================================
+
+@login_required
+@with_module_nav('manufacturing', 'production')
+@htmx_view('manufacturing/pages/production_order_detail.html', 'manufacturing/partials/production_order_detail_content.html')
+def production_order_detail(request, pk):
+    hub_id = request.session.get('hub_id')
+    order = get_object_or_404(ProductionOrder, pk=pk, hub_id=hub_id, is_deleted=False)
+    return {
+        'order': order,
+        'batches': ProductionBatch.objects.filter(production_order=order, is_deleted=False).order_by('-production_date'),
+    }
+
+
+def _render_batches_list(request, order):
+    batches = ProductionBatch.objects.filter(production_order=order, is_deleted=False).order_by('-production_date')
+    return django_render(request, 'manufacturing/partials/batches_list.html', {
+        'order': order,
+        'batches': batches,
+    })
+
+
+@login_required
+@require_POST
+def batch_add(request, pk):
+    hub_id = request.session.get('hub_id')
+    order = get_object_or_404(ProductionOrder, pk=pk, hub_id=hub_id, is_deleted=False)
+    batch = ProductionBatch(hub_id=hub_id)
+    batch.production_order = order
+    batch.bom = order.bom
+    batch.batch_number = request.POST.get('batch_number', '').strip()
+    batch.quantity_produced = request.POST.get('quantity_produced', '0') or '0'
+    batch.production_date = request.POST.get('production_date') or None
+    batch.expiry_date = request.POST.get('expiry_date') or None
+    batch.quality_status = request.POST.get('quality_status', 'pending').strip()
+    batch.notes = request.POST.get('notes', '').strip()
+    batch.save()
+    return _render_batches_list(request, order)
+
+
+@login_required
+@require_POST
+def batch_delete(request, pk, batch_pk):
+    hub_id = request.session.get('hub_id')
+    order = get_object_or_404(ProductionOrder, pk=pk, hub_id=hub_id, is_deleted=False)
+    batch = get_object_or_404(ProductionBatch, pk=batch_pk, production_order=order, is_deleted=False)
+    batch.is_deleted = True
+    batch.deleted_at = timezone.now()
+    batch.save(update_fields=['is_deleted', 'deleted_at', 'updated_at'])
+    return _render_batches_list(request, order)
+
+
+@login_required
+def batch_add_panel(request, pk):
+    hub_id = request.session.get('hub_id')
+    order = get_object_or_404(ProductionOrder, pk=pk, hub_id=hub_id, is_deleted=False)
+    return django_render(request, 'manufacturing/partials/panel_batch_add.html', {'order': order})
 
 
 @login_required

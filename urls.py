@@ -29,6 +29,14 @@ urlpatterns = [
     path('production_orders/<uuid:pk>/delete/', views.production_order_delete, name='production_order_delete'),
     path('production_orders/bulk/', views.production_orders_bulk_action, name='production_orders_bulk_action'),
 
+    # Production Order Detail
+    path('production/<uuid:pk>/', views.production_order_detail, name='production_order_detail'),
+
+    # Batches
+    path('production/<uuid:pk>/batches/add/', views.batch_add, name='batch_add'),
+    path('production/<uuid:pk>/batches/panel/', views.batch_add_panel, name='batch_add_panel'),
+    path('production/<uuid:pk>/batches/<uuid:batch_pk>/delete/', views.batch_delete, name='batch_delete'),
+
     # Settings
     path('settings/', views.settings_view, name='settings'),
 ]

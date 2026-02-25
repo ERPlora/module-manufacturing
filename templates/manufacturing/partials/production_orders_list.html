@@ -59,7 +59,12 @@
                         <span class="checkbox-mark"></span>
                     </label>
                 </td>
-                <td class="datatable-td">{{ item.order_number }}</td>
+                <td class="datatable-td">
+                    <span class="font-medium cursor-pointer text-primary"
+                          hx-get="{% url 'manufacturing:production_order_detail' item.id %}"
+                          hx-target="#main-content-area"
+                          hx-push-url="true">{{ item.order_number }}</span>
+                </td>
                 <td class="datatable-td">{{ item.bom }}</td>
                 <td class="datatable-td">
                     <span class="badge badge-sm">{{ item.status }}</span>
