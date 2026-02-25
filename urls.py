@@ -7,6 +7,10 @@ urlpatterns = [
     # Dashboard
     path('', views.dashboard, name='dashboard'),
 
+    # Navigation tabs
+    path('bom/', views.bill_of_materialses_list, name='bom'),
+    path('production/', views.production_orders_list, name='production'),
+
     # BillOfMaterials
     path('bill_of_materialses/', views.bill_of_materialses_list, name='bill_of_materialses_list'),
     path('bill_of_materialses/add/', views.bill_of_materials_add, name='bill_of_materials_add'),
