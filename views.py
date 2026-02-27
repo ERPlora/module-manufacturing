@@ -8,7 +8,7 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.views.decorators.http import require_POST
 
-from apps.accounts.decorators import login_required
+from apps.accounts.decorators import login_required, permission_required
 from apps.core.htmx import htmx_view
 from apps.core.services import export_to_csv, export_to_excel
 from apps.modules_runtime.navigation import with_module_nav
@@ -508,6 +508,7 @@ def batch_add_panel(request, pk):
 
 
 @login_required
+@permission_required('manufacturing.manage_settings')
 @with_module_nav('manufacturing', 'settings')
 @htmx_view('manufacturing/pages/settings.html', 'manufacturing/partials/settings_content.html')
 def settings_view(request):
